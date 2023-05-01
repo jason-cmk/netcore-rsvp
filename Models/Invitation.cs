@@ -4,4 +4,5 @@ public class Invitation
     public bool CanAttend { get; set; }
     public string? FoodAllergies { get; set; }
     public string? Message { get; set; }
+    public string? Name { get; internal set; }
 }

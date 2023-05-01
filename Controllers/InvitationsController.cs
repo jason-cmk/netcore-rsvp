@@ -12,14 +12,20 @@ public class InvitationsController : ControllerBase
     }
 
     [HttpGet(Name = "GetInvitation")]
+    [Route("{id}")]
     public Invitation GetInvitation(Guid id)
     {
-        return new Invitation
+        var invitation = new Invitation
         {
-            Id = Guid.NewGuid(),
+            Id = id,
+            Name = "Charlie",
             CanAttend = true,
             FoodAllergies = "can only eat meat",
             Message = "hellowwww"
         };
+        
+        _logger.LogInformation($"Getting invitation {{ Id: {invitation.Id}, Name: {invitation.Name} }}");
+
+        return invitation;
     }
 }
