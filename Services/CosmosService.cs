@@ -1,9 +1,9 @@
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 public class CosmosService : ICosmosService
 {
-    private readonly string? _dbName;
     private readonly CosmosClient _cosmosClient;
     private readonly ILogger _logger;
     private readonly IOptions<CosmosConfig> _cosmosConfig;
@@ -15,6 +15,17 @@ public class CosmosService : ICosmosService
         _logger = logger;
         _cosmosConfig = CosmosConfig;
         _cosmosClient = cosmosClient;
+    }
+
+    public async Task<Invitation> GetInvitation(string id)
+    {
+        var dbName = _cosmosConfig.Value.DbName;
+        var containerName = _cosmosConfig.Value.ContainerName;
+
+        var container = _cosmosClient.GetContainer(dbName, containerName);
+        var invitation = await container.ReadItemAsync<Invitation>(id, PartitionKey.None);
+
+        return invitation;
     }
 
     public async Task InitialiseDatabase()
@@ -34,16 +45,23 @@ public class CosmosService : ICosmosService
 
     private async Task PopulateData(Container container)
     {
-        var invitation = new Invitation
-        {
-            Id = "27a1efe8-aace-404f-888a-4d8995a30e0f",
-            CanAttend = true,
-            Name = "Charlie Kang",
-            FoodAllergies = "Too big fish",
-            Message = "Meow meow :3"
-        };
+        var inputText = File.ReadAllText(@".\Data\data.json");
+        var invitations = JsonConvert.DeserializeObject<IList<Invitation>>(inputText);
 
-        await container.CreateItemAsync(invitation);
-        _logger.LogInformation("Data populated");
+        _logger.LogInformation("Attempting to create invitations:\n {Invitations}", JsonConvert.SerializeObject(invitations));
+
+        if (invitations == null) {
+            throw new RsvpException("Unable to serialize");
+        }
+
+        var tasks = new List<Task>();
+
+        foreach (var invitation in invitations)
+        {
+            var task = Task.Run(async () => await container.CreateItemAsync(invitation));
+            tasks.Add(task);
+        }
+
+        await Task.WhenAll(tasks);
     }
 }

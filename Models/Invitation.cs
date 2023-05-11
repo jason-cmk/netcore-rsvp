@@ -1,19 +1,20 @@
-using System.Text.Json.Serialization;
+
+using Newtonsoft.Json;
 
 public class Invitation
 {
-    [JsonPropertyName("id")]
+    [JsonProperty(PropertyName = "id")]
     public string? Id { get; set; }
 
-    [JsonPropertyName("canAttend")]
+    [JsonProperty(PropertyName = "canAttend")]
     public bool? CanAttend { get; set; }
 
-    [JsonPropertyName("foodAllergies")]
+    [JsonProperty(PropertyName = "foodAllergies")]
     public string? FoodAllergies { get; set; }
 
-    [JsonPropertyName("message")]
+    [JsonProperty(PropertyName = "message")]
     public string? Message { get; set; }
 
-    [JsonPropertyName("name")]
+    [JsonProperty(PropertyName = "name")]
     public string? Name { get; set; }
 }

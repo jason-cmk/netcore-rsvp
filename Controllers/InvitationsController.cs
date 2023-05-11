@@ -17,18 +17,17 @@ public class InvitationsController : ControllerBase
     [Route("{id}")]
     public async Task<Invitation> GetInvitation(string id)
     {
-        await _cosmosService.InitialiseDatabase();
-        var invitation = new Invitation
-        {
-            Id = id,
-            Name = "Charlie",
-            CanAttend = null,
-            FoodAllergies = "can only eat meat",
-            Message = "hellowwww"
-        };
-        
+        var invitation = await _cosmosService.GetInvitation(id);
+
         _logger.LogInformation($"Getting invitation {{ Id: {invitation.Id}, Name: {invitation.Name} }}");
 
         return invitation;
+    }
+
+    [HttpGet(Name = "InitialiseInvitations")]
+    [Route("init")]
+    public async Task Initialise()
+    {
+        await _cosmosService.InitialiseDatabase();
     }
 }
