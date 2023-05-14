@@ -17,12 +17,22 @@ public class CosmosService : ICosmosService
         _cosmosClient = cosmosClient;
     }
 
-    public async Task<Invitation> GetInvitation(string id)
+    private const string _partitionKey = "/partitionKey";
+
+    private Container GetContainer()
     {
         var dbName = _cosmosConfig.Value.DbName;
         var containerName = _cosmosConfig.Value.ContainerName;
 
         var container = _cosmosClient.GetContainer(dbName, containerName);
+
+        return container;
+    }
+
+    public async Task<Invitation> GetInvitation(string id)
+    {
+        var container = GetContainer();
+
         var invitation = await container.ReadItemAsync<Invitation>(id, PartitionKey.None);
 
         return invitation;
@@ -37,10 +47,19 @@ public class CosmosService : ICosmosService
         var database = databaseResponse.Database;
 
         var containerName = _cosmosConfig.Value.ContainerName;
-        var containerResponse = await database.CreateContainerIfNotExistsAsync(containerName, "/partitionKey");
+        var containerResponse = await database.CreateContainerIfNotExistsAsync(containerName, _partitionKey);
         var container = containerResponse.Container;
 
         await PopulateData(container);
+    }
+
+    public async Task<Invitation> UpdateInvitation(Invitation updateInvitationRequest)
+    {
+        var container = GetContainer();
+
+        var updateInvitationResponse = await container.ReplaceItemAsync<Invitation>(updateInvitationRequest, updateInvitationRequest.Id, PartitionKey.None);
+
+        return updateInvitationResponse;
     }
 
     private async Task PopulateData(Container container)
@@ -50,7 +69,8 @@ public class CosmosService : ICosmosService
 
         _logger.LogInformation("Attempting to create invitations:\n {Invitations}", JsonConvert.SerializeObject(invitations));
 
-        if (invitations == null) {
+        if (invitations == null)
+        {
             throw new RsvpException("Unable to serialize");
         }
 

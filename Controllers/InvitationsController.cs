@@ -19,10 +19,21 @@ public class InvitationsController : ControllerBase
     {
         var invitation = await _cosmosService.GetInvitation(id);
 
-        _logger.LogInformation($"Getting invitation {{ Id: {invitation.Id}, Name: {invitation.Name} }}");
+        _logger.LogInformation("Getting invitation { Id: {Invitation}, Name: {Invitation} }", invitation.Id, invitation.Name);
 
         return invitation;
     }
+
+    [HttpPut(Name = "UpdateInvitation")]
+    public async Task<Invitation> UpdateInvitation(Invitation invitationRequest)
+    {
+        var invitation = await _cosmosService.UpdateInvitation(invitationRequest);
+
+        _logger.LogInformation("Updated invitation { Id: {Invitation}, Name: {Invitation} }", invitation.Id, invitation.Name);
+        
+        return invitation;
+    }
+
 
     [HttpGet(Name = "InitialiseInvitations")]
     [Route("init")]
