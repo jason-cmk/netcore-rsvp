@@ -38,6 +38,21 @@ public class CosmosService : ICosmosService
         return invitation;
     }
 
+    public async Task<Invitation> UpdateInvitation(Invitation updateInvitationRequest)
+    {
+        var container = GetContainer();
+
+        var invitation = await container.ReadItemAsync<Invitation>(updateInvitationRequest.Id, PartitionKey.None);
+
+        invitation.Resource.CanAttend = updateInvitationRequest.CanAttend;
+        invitation.Resource.FoodAllergies = updateInvitationRequest.FoodAllergies;
+        invitation.Resource.Message = updateInvitationRequest.Message;
+
+        var updateInvitationResponse = await container.ReplaceItemAsync<Invitation>(invitation.Resource, invitation.Resource.Id, PartitionKey.None);
+
+        return updateInvitationResponse;
+    }
+
     public async Task InitialiseDatabase()
     {
         _logger.LogInformation("Creating database and container if none exists");
@@ -51,15 +66,6 @@ public class CosmosService : ICosmosService
         var container = containerResponse.Container;
 
         await PopulateData(container);
-    }
-
-    public async Task<Invitation> UpdateInvitation(Invitation updateInvitationRequest)
-    {
-        var container = GetContainer();
-
-        var updateInvitationResponse = await container.ReplaceItemAsync<Invitation>(updateInvitationRequest, updateInvitationRequest.Id, PartitionKey.None);
-
-        return updateInvitationResponse;
     }
 
     private async Task PopulateData(Container container)
