@@ -4,8 +4,9 @@ using ILogger = Serilog.ILogger;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddHealthChecks();
 
+// Add logging provider
 builder.Logging.ClearProviders();
 
 ILogger logger = new LoggerConfiguration()
@@ -15,28 +16,30 @@ ILogger logger = new LoggerConfiguration()
 builder.Logging.AddSerilog(logger);
 builder.Services.AddSingleton(logger);
 
+// Add API Services 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Configure CORS
+const string defaultCorsPolicy = "defaultCorsPolicy";
+builder.Services.AddCors(options =>
+        {
+            options.AddPolicy(name: defaultCorsPolicy,
+                    policy =>
+                    {
+                        policy.WithOrigins("*")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                    });
+        });
+
+// Configure Cosmos
 var cosmosConfigSection = builder.Configuration.GetSection("CosmosConfig");
 builder.Services.Configure<CosmosConfig>(cosmosConfigSection);
 
 builder.Services.AddTransient<ICosmosService, CosmosService>();
-
-const string localCorsPolicy = "local";
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(name: localCorsPolicy,
-            policy =>
-            {
-                policy.WithOrigins("http://localhost:3000")
-                .AllowAnyMethod()
-                .AllowAnyHeader();
-            }
-        );
-});
 
 builder.Services.AddSingleton<CosmosClient>(serviceProvider =>
 {
@@ -56,7 +59,7 @@ builder.Services.AddSingleton<CosmosClient>(serviceProvider =>
     throw new RsvpException("Unable to initialise Cosmos client.");
 });
 
-
+// Start application
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -72,7 +75,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.UseCors(localCorsPolicy);
+app.UseCors(defaultCorsPolicy);
+
+app.MapHealthChecks("/ping");
 
 app.Run();
 
