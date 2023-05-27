@@ -1,6 +1,6 @@
+using Azure.Identity;
 using Microsoft.Azure.Cosmos;
 using Serilog;
-using ILogger = Serilog.ILogger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,12 +9,24 @@ builder.Services.AddHealthChecks();
 // Add logging provider
 builder.Logging.ClearProviders();
 
-ILogger logger = new LoggerConfiguration()
+var logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateLogger();
 
 builder.Logging.AddSerilog(logger);
 builder.Services.AddSingleton(logger);
+
+// Add key vault
+var keyVaultUrl = builder.Configuration["KeyVaultUrl"];
+
+if (keyVaultUrl != null)
+{
+    builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUrl), new DefaultAzureCredential());
+}
+else
+{
+    logger.Error("Unable to connect to Azure key vault.");
+}
 
 // Add API Services 
 builder.Services.AddControllers();
@@ -36,6 +48,7 @@ builder.Services.AddCors(options =>
         });
 
 // Configure Cosmos
+var keyVaultCosmosPrimaryKey = builder.Configuration["CosmosConfig-CosmosPrimaryKey"];
 var cosmosConfigSection = builder.Configuration.GetSection("CosmosConfig");
 
 builder.Services.Configure<CosmosConfig>(cosmosConfigSection);
@@ -51,8 +64,19 @@ builder.Services.AddSingleton<CosmosClient>(serviceProvider =>
         throw new RsvpException("Invalid cosmos configuartion section");
     }
 
+    string? cosmosPrimaryKey;
+    if (keyVaultCosmosPrimaryKey == null)
+    {
+        logger.Information("CosmosPrimaryKey set with local config.");
+        cosmosPrimaryKey = cosmosConfig.CosmosPrimaryKey;
+    }
+    else
+    {
+        logger.Information("CosmosPrimaryKey set with key vault.");
+        cosmosPrimaryKey = keyVaultCosmosPrimaryKey;
+    }
+
     string? endpointUrl = cosmosConfig.EndpointUrl;
-    string? cosmosPrimaryKey = cosmosConfig.CosmosPrimaryKey;
     string? dbName = cosmosConfig.DbName;
 
     if (endpointUrl != null && cosmosPrimaryKey != null)

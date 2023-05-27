@@ -19,7 +19,7 @@ public class InvitationsController : ControllerBase
     {
         var invitation = await _cosmosService.GetInvitation(id);
 
-        _logger.LogInformation("Getting invitation { Id: {Invitation}, Name: {Invitation} }", invitation.Id, invitation.Name);
+        _logger.LogInformation("Getting invitation { Id: {Id}, Name: {Name} }", id, invitation.Name);
 
         return invitation;
     }
@@ -29,7 +29,7 @@ public class InvitationsController : ControllerBase
     {
         var invitation = await _cosmosService.UpdateInvitation(invitationRequest);
 
-        _logger.LogInformation("Updated invitation { Id: {Invitation}, Name: {Invitation} }", invitation.Id, invitation.Name);
+        _logger.LogInformation("Updated invitation { Id: {Id}, Name: {Name} }", invitation.Id, invitation.Name);
         
         return invitation;
     }
