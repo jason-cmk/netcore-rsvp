@@ -37,19 +37,23 @@ builder.Services.AddCors(options =>
 
 // Configure Cosmos
 var cosmosConfigSection = builder.Configuration.GetSection("CosmosConfig");
+
 builder.Services.Configure<CosmosConfig>(cosmosConfigSection);
 
 builder.Services.AddTransient<ICosmosService, CosmosService>();
 
 builder.Services.AddSingleton<CosmosClient>(serviceProvider =>
 {
-    var config = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
+    var cosmosConfig = cosmosConfigSection.Get<CosmosConfig>();
 
-    string? endpointUrl = config.GetValue<string>("CosmosConfig:EndpointUrl");
-    string? cosmosPrimaryKey = config.GetValue<string>("CosmosConfig:CosmosPrimaryKey");
-    string? dbName = config.GetValue<string>("CosmosConfig:DbName");
+    if (cosmosConfig == null)
+    {
+        throw new RsvpException("Invalid cosmos configuartion section");
+    }
+
+    string? endpointUrl = cosmosConfig.EndpointUrl;
+    string? cosmosPrimaryKey = cosmosConfig.CosmosPrimaryKey;
+    string? dbName = cosmosConfig.DbName;
 
     if (endpointUrl != null && cosmosPrimaryKey != null)
     {
