@@ -21,11 +21,15 @@ var keyVaultUrl = builder.Configuration["KeyVaultUrl"];
 
 if (keyVaultUrl != null)
 {
-    builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUrl), new DefaultAzureCredential());
+    try {
+        builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUrl), new DefaultAzureCredential());
+    } catch (Exception e) {
+        logger.Error("Failed to load Azure Key Vault: {Message}", e.Message);
+    }
 }
 else
 {
-    logger.Error("Unable to connect to Azure key vault.");
+    logger.Error("Unable to get Azure key vault URL.");
 }
 
 // Add API Services 
